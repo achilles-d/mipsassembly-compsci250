@@ -4,7 +4,8 @@
 main:
 li $v0, 5		# accept input for N 
 syscall
-move $t1, $v0		# t1 contains N
+move $t1, $v0
+addi $t1, 1		# t1 contains N+1
 
 li $t0, 1		# t0 contains COUNTER 
 li $t2, 17		# t2 contains 17 
