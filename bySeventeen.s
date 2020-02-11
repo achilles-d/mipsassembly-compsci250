@@ -1,14 +1,7 @@
-.text 
+.text
 .globl main
 
-msg: .asciiz "Enter the value of N;"
-
 main:
-
-li $v0, 4		# print prompt
-la $a0, msg
-syscall
-
 li $v0, 5		# accept input for N 
 syscall
 move $t1, $v0		# t1 contains N
