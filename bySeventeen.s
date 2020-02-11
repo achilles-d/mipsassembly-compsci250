@@ -16,7 +16,7 @@ mult $t0, $t2
 mflo $a0
 syscall
 
-li $a0, $0, 10
+li $a0, 10
 li $v0, 11
 syscall
 
