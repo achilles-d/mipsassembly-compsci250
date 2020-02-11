@@ -16,8 +16,8 @@ mult $t0, $t2
 mflo $a0
 syscall
 
-li $a0, 10
-li $v0, 11
+li $v0, 4
+la $a0, line
 syscall
 
 addi $t0, 1
@@ -26,4 +26,7 @@ j loop
 
 
 exit:
-jr $ra 
+jr $ra
+
+.data
+line: .asciiz "\n" 
