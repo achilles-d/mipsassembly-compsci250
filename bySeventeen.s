@@ -16,8 +16,12 @@ mult $t0, $t2
 mflo $a0
 syscall
 
+li $a0, $0, 10
+li $v0, 11
+syscall
+
 addi $t0, 1
-beq $t0, $t2, exit 
+beq $t0, $t1, exit 
 j loop 
 
 
