@@ -17,10 +17,15 @@ li $v0, 10
 syscall
 
 recurse:
-addi $sp, $sp, -12 
-sw $ra 0($sp) 
+addi $sp, $sp, -28
+sw $ra, 0($sp) 
 sw $s0, 4($sp)
-sw $s1 8($sp)
+sw $s1, 8($sp)
+sw $s2, 12($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
 
 move $s0, $a0 
 
@@ -61,8 +66,13 @@ li $v0, 1		# f(0) = 1
 j exit
 
 exit:
-lw $ra, 0($sp)
+lw $ra, 0($sp) 
 lw $s0, 4($sp)
 lw $s1, 8($sp)
-addi $sp, $sp, 12 	# pop stack pointer
+lw $s2, 12($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+addi $sp, $sp, 28 	# pop stack pointer
 jr $ra

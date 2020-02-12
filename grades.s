@@ -18,7 +18,7 @@ hash:
 # Initialize the hash table.
 #
 init_hash_table:
-	jr $ra				# Already stored in .data
+	jr $ra							# Already stored in .data
 
 #
 # Insert the record unless a record with the same ID already exists in the hash table.
@@ -27,15 +27,80 @@ init_hash_table:
 # Arguments: $a0 (ID), $a1 (exam 1 score), $a2 (exam 2 score), $a3 (address of name buffer)
 #
 insert_student:
-	addi $sp, $sp, -4
-	sw $ra, 0($sp)		# Allocate on stack
-	jal hash			# Generate hash
+	addi $sp, $sp, -32
+    sw $s1, 0($sp)					# for ID
+	sw $s2, 4($sp)					# for ex1
+	sw $s3, 8($sp)					# for ex2
+	sw $s4, 12($sp)					# for name buffer
+    sw $s5, 16($sp)                 # for .next 
+    sw $s0, 20($sp)                 # for hash
+    sw $ra, 24($sp)					# Allocate on stack
+
+	jal hash						# Generate hash
 	
-	move $t0, $v0		# Store hash in t0
-	move $t1, $a0		# Store ID in t1
-	move $t2, $a1		# Store ex1 in t2
-	move $t3, $a2		# Store ex2 in t3
+	move $s0, $v0					# Store hash in s0
+	move $s1, $a0					# Store ID in s1
+	move $s2, $a1					# Store ex1 in s2
+	move $s3, $a2					# Store ex2 in s3
+	move $s4, $a3					# Store name buffer in s3
 	
+	la $t0, table					# Store table pointer in t0
+	sll $s0, $s0, 2					# hash * 4
+	add $t0, $s0, $t0				# Now pointing to table[hash] 
+	lw $t1, 0($t0)					# Store 1st bucket value in t1
+	beq $t1, $0, ins_new_hash		# go to ins_new_hash if table[hash] is EMPTY 
+	
+    lw $s1, 0($sp)					# for ID
+	lw $s2, 4($sp)					# for ex1
+	lw $s3, 8($sp)					# for ex2
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)                 # for return address
+    
+    addi $sp, $sp, 32               # collapse stack 
+
+    jr $ra 
+
+# Insert record into the head of table[hash]
+ins_new_hash:
+	sw $s1, 0($t0)					# Save ID to 0 
+	sw $s2, 4($t0)					# Save ex1 to 4
+	sw $s3, 8($t0)					# Save ex2 to 8
+	sw $s4, 12($t0)					# Save name buffer to 12
+    sw $s5, 16($t0)                  # Save .next field (NULL) to 16
+
+	lw $s1, 0($sp)					# for ID
+	lw $s2, 4($sp)					# for ex1
+	lw $s3, 8($sp)					# for ex2
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)                 # for return address
+
+    addi $sp, $sp, 32               # collapse stack 
+
+    la $a0, INSERT                  # "INSERT "
+    li $v0, 1
+    syscall
+
+    la $a0, 0($sp)                # "ID"
+    li $v0, 1
+    syscall
+
+    la $a0, 4($sp)                # "ex1"
+    li $v0, 1
+    syscall
+
+    la $a0, 8($sp)                   # "ex2"
+    li $v0, 1
+    syscall
+
+    la $a0, 12($sp)                  # "ex2"
+    li $v0, 1
+    syscall
+
+    jr $ra 
 
 #
 # Delete the record for the specified ID, if it exists in the hash table.
@@ -246,7 +311,7 @@ char_is_newline:
 # DATA
 #
 .data 
-table: .word: 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+table: .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 PROMPT_COMMAND_TYPE:    .asciiz     "PROMPT (COMMAND TYPE): "
 PROMPT_ID:              .asciiz     "PROMPT (ID): "
 PROMPT_EXAM1:           .asciiz     "PROMPT (EXAM 1 SCORE): "
@@ -258,3 +323,5 @@ COMMAND_I:              .asciiz     "i"                         # Insert
 COMMAND_D:              .asciiz     "d"                         # Delete
 COMMAND_L:              .asciiz     "l"                         # Lookup
 COMMAND_T:              .asciiz     "t"                         # Terminate
+INSERT:                 .asciiz     "INSERT "                   # Student inserted
+NOT_INSERTED:           .asciiz     " cannot insert because record exists\n"  
