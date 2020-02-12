@@ -27,14 +27,14 @@ init_hash_table:
 # Arguments: $a0 (ID), $a1 (exam 1 score), $a2 (exam 2 score), $a3 (address of name buffer)
 #
 insert_student:
-	addi $sp, $sp, -32
+	addi $sp, $sp, -36
     sw $s1, 0($sp)					# for ID
 	sw $s2, 4($sp)					# for ex1
 	sw $s3, 8($sp)					# for ex2
-	sw $s4, 12($sp)					# for name buffer
-    sw $s5, 16($sp)                 # for .next 
-    sw $s0, 20($sp)                 # for hash
-    sw $ra, 24($sp)					# Allocate on stack
+	sw $s4, 24($sp)					# for name buffer
+    sw $s5, 28($sp)                 # for .next 
+    sw $s0, 32($sp)                 # for hash
+    sw $ra, 36($sp)					# Allocate on stack
 
 	jal hash						# Generate hash
 	
@@ -43,64 +43,68 @@ insert_student:
 	move $s2, $a1					# Store ex1 in s2
 	move $s3, $a2					# Store ex2 in s3
 	move $s4, $a3					# Store name buffer in s3
+    move $s5, $0                    # Make .next NULL
 	
 	la $t0, table					# Store table pointer in t0
 	sll $s0, $s0, 2					# hash * 4
 	add $t0, $s0, $t0				# Now pointing to table[hash] 
 	lw $t1, 0($t0)					# Store 1st bucket value in t1
 	beq $t1, $0, ins_new_hash		# go to ins_new_hash if table[hash] is EMPTY 
+    
+    jal else_hash
 	
     lw $s1, 0($sp)					# for ID
 	lw $s2, 4($sp)					# for ex1
 	lw $s3, 8($sp)					# for ex2
-	lw $s4, 12($sp)					# for name buffer
-    lw $s5, 16($sp)                 # for .next 
-    lw $s0, 20($sp)                 # for hash
-    lw $ra, 24($sp)                 # for return address
+	lw $s4, 24($sp)					# for name buffer
+    lw $s5, 28($sp)                 # for .next 
+    lw $s0, 32($sp)                 # for hash
+    lw $ra, 36($sp)                 # for return address
     
-    addi $sp, $sp, 32               # collapse stack 
+    addi $sp, $sp, 36               # collapse stack 
 
     jr $ra 
 
 # Insert record into the head of table[hash]
 ins_new_hash:
-	sw $s1, 0($t0)					# Save ID to 0 
+    sw $s1, 0($t0)					# Save ID to 0 
 	sw $s2, 4($t0)					# Save ex1 to 4
 	sw $s3, 8($t0)					# Save ex2 to 8
-	sw $s4, 12($t0)					# Save name buffer to 12
-    sw $s5, 16($t0)                  # Save .next field (NULL) to 16
-
-	lw $s1, 0($sp)					# for ID
-	lw $s2, 4($sp)					# for ex1
-	lw $s3, 8($sp)					# for ex2
-	lw $s4, 12($sp)					# for name buffer
-    lw $s5, 16($sp)                 # for .next 
-    lw $s0, 20($sp)                 # for hash
-    lw $ra, 24($sp)                 # for return address
-
-    addi $sp, $sp, 32               # collapse stack 
+	sw $s4, 24($t0)					# Save name buffer to 12
+    sw $s5, 28($t0)                  # Save .next field (NULL) to 16
 
     la $a0, INSERT                  # "INSERT "
+    li $v0, 4
+    syscall
+    lw $a0, 0($t0)                  # "ID"
     li $v0, 1
+    syscall
+    lw $a0, 4($t0)                  # "ex1"
+    li $v0, 1
+    syscall
+    lw $a0, 8($t0)                  # "ex2"
+    li $v0, 1
+    syscall
+    la $a0, 24($t0)                 # "NAME"            
+    li $v0, 4
     syscall
 
-    la $a0, 0($sp)                # "ID"
-    li $v0, 1
-    syscall
+    lw $s1, 0($sp)					# for ID
+	lw $s2, 4($sp)					# for ex1
+	lw $s3, 8($sp)					# for ex2
+	lw $s4, 24($sp)					# for name buffer
+    lw $s5, 28($sp)                 # for .next 
+    lw $s0, 32($sp)                 # for hash
+    lw $ra, 36($sp)                 # for return address
 
-    la $a0, 4($sp)                # "ex1"
-    li $v0, 1
-    syscall
-
-    la $a0, 8($sp)                   # "ex2"
-    li $v0, 1
-    syscall
-
-    la $a0, 12($sp)                  # "ex2"
-    li $v0, 1
-    syscall
+    addi $sp, $sp, 36               # collapse stack 
+    
 
     jr $ra 
+
+# Do if table[hash] is not empty 
+else_hash:
+
 
 #
 # Delete the record for the specified ID, if it exists in the hash table.
@@ -323,5 +327,7 @@ COMMAND_I:              .asciiz     "i"                         # Insert
 COMMAND_D:              .asciiz     "d"                         # Delete
 COMMAND_L:              .asciiz     "l"                         # Lookup
 COMMAND_T:              .asciiz     "t"                         # Terminate
+SPACE:                  .asciiz     " "                         # Space 
+NEWLINE:                .asciiz     "\n"                        # Newline 
 INSERT:                 .asciiz     "INSERT "                   # Student inserted
 NOT_INSERTED:           .asciiz     " cannot insert because record exists\n"  
