@@ -9,15 +9,16 @@
 # Return: $v0 = hash (int)
 #
 hash:
-    # TODO: Implement
-
+    li $t0, 13
+	div $a0, $t0
+	mfhi $v0
+	jr $ra
 
 #
 # Initialize the hash table.
 #
 init_hash_table:
-    # TODO: Implement
-
+	jr $ra				# Already stored in .data
 
 #
 # Insert the record unless a record with the same ID already exists in the hash table.
@@ -26,8 +27,15 @@ init_hash_table:
 # Arguments: $a0 (ID), $a1 (exam 1 score), $a2 (exam 2 score), $a3 (address of name buffer)
 #
 insert_student:
-    # TODO: Implement
-
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)		# Allocate on stack
+	jal hash			# Generate hash
+	
+	move $t0, $v0		# Store hash in t0
+	move $t1, $a0		# Store ID in t1
+	move $t2, $a1		# Store ex1 in t2
+	move $t3, $a2		# Store ex2 in t3
+	
 
 #
 # Delete the record for the specified ID, if it exists in the hash table.
@@ -237,7 +245,8 @@ char_is_newline:
 # 
 # DATA
 #
-.data
+.data 
+table: .word: 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 PROMPT_COMMAND_TYPE:    .asciiz     "PROMPT (COMMAND TYPE): "
 PROMPT_ID:              .asciiz     "PROMPT (ID): "
 PROMPT_EXAM1:           .asciiz     "PROMPT (EXAM 1 SCORE): "
