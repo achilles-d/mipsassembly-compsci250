@@ -73,21 +73,39 @@ ins_new_hash:
 	sw $s4, 24($t0)					# Save name buffer to 12
     sw $s5, 28($t0)                  # Save .next field (NULL) to 16
 
-    la $a0, INSERT                  # "INSERT "
+    la $a0, INSERT                  
     li $v0, 4
-    syscall
-    lw $a0, 0($t0)                  # "ID"
-    li $v0, 1
-    syscall
-    lw $a0, 4($t0)                  # "ex1"
-    li $v0, 1
-    syscall
-    lw $a0, 8($t0)                  # "ex2"
-    li $v0, 1
-    syscall
-    la $a0, 24($t0)                 # "NAME"            
+    syscall                         # "INSERT "
+    la $a0, L_PARENTHESIS
     li $v0, 4
-    syscall
+    syscall                         # "("
+    lw $a0, 0($t0)                  
+    li $v0, 1
+    syscall                         # "ID"
+    la $a0, R_PARENTHESIS
+    li $v0, 4
+    syscall                         # ")"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    lw $a0, 4($t0)                  
+    li $v0, 1
+    syscall                         # "ex1"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    lw $a0, 8($t0)                  
+    li $v0, 1
+    syscall                         # "ex2"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    lw $a0, 24($t0)                            
+    li $v0, 4
+    syscall                         # "NAME" 
+    la $a0, NEWLINE
+    li $v0, 4
+    syscall                         # " "
 
     lw $s1, 0($sp)					# for ID
 	lw $s2, 4($sp)					# for ex1
@@ -328,6 +346,8 @@ COMMAND_D:              .asciiz     "d"                         # Delete
 COMMAND_L:              .asciiz     "l"                         # Lookup
 COMMAND_T:              .asciiz     "t"                         # Terminate
 SPACE:                  .asciiz     " "                         # Space 
-NEWLINE:                .asciiz     "\n"                        # Newline 
+NEWLINE:                .asciiz     "\n"                        # Newline
+L_PARENTHESIS:          .asciiz     "("                         # Left parenthesis
+R_PARENTHESIS:          .asciiz     ")"                         # Right parenthesis  
 INSERT:                 .asciiz     "INSERT "                   # Student inserted
 NOT_INSERTED:           .asciiz     " cannot insert because record exists\n"  
