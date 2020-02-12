@@ -33,8 +33,8 @@ add $a0, $s0, -1
 jal recurse
 
 move $s1, $v0
-addi $s1, -2
-move $a0, $s1
+addi $s0, -2
+move $a0, $s0
 
 jal recurse
 
@@ -44,11 +44,11 @@ mult $s2, $s4
 mflo $s3
 addi $s3, 2		# 4(n - 2) + 2
 
-li $s4, 3
-mult $s1, $s4
-mflo $s5		# 3(n - 1)
+li $s5, 3
+mult $s1, $s5
+mflo $s6		# 3(n - 1)
 
-add $v0, $s5, $s3	# return entire thing
+add $v0, $s6, $s3	# return entire thing
 
 j exit 
 
@@ -57,7 +57,7 @@ li $v0, 2		# f(1) = 2
 j exit 
 
 baseTwo: 
-li $v0, 1		# f(2) = 0
+li $v0, 1		# f(0) = 1
 j exit
 
 exit:
