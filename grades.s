@@ -81,38 +81,38 @@ ins_new_hash:
 	sw $s3, 8($t0)					# Save ex2 to 8
     sw $s5, 12($t0)                  # Save .next field (NULL) to 16
 
-    lb $t4, 0($s4) #saves name
-	sb $t4, 16($t0) #saves name
-	lb $t4, 1($s4) #saves name
-	sb $t4, 17($t0) #saves name
-	lb $t4, 2($s4) #saves name
-	sb $t4, 18($t0) #saves name
-	lb $t4, 3($s4) #saves name
-	sb $t4, 19($t0) #saves name
-	lb $t4, 4($s4) #saves name
-	sb $t4, 20($t0) #saves name
-	lb $t4, 5($s4) #saves name
-	sb $t4, 21($t0) #saves name
-	lb $t4, 6($s4) #saves name
-	sb $t4, 22($t0) #saves name
-	lb $t4, 7($s4) #saves name
-	sb $t4, 23($t0) #saves name
-	lb $t4, 8($s4) #saves name
-	sb $t4, 24($t0) #saves name
-	lb $t4, 9($s4) #saves name
-	sb $t4, 25($t0) #saves name
-	lb $t4, 10($s4) #saves name
-	sb $t4, 26($t0) #saves name
-	lb $t4, 11($s4) #saves name
-	sb $t4, 27($t0) #saves name
-	lb $t4, 12($s4) #saves name
-	sb $t4, 28($t0) #saves name
-	lb $t4, 13($s4) #saves name
-	sb $t4, 29($t0) #saves name
-	lb $t4, 14($s4) #saves name
-	sb $t4, 30($t0) #saves name
-	lb $t4, 15($s4) #saves name
-	sb $t4, 31($t0) #saves name
+    lb $t4, 0($s4)
+	sb $t4, 16($t0)
+	lb $t4, 1($s4)
+	sb $t4, 17($t0)
+	lb $t4, 2($s4)
+	sb $t4, 18($t0)
+	lb $t4, 3($s4)
+	sb $t4, 19($t0)
+	lb $t4, 4($s4)
+	sb $t4, 20($t0)
+	lb $t4, 5($s4) 
+	sb $t4, 21($t0)
+	lb $t4, 6($s4)
+	sb $t4, 22($t0)
+	lb $t4, 7($s4)
+	sb $t4, 23($t0)
+	lb $t4, 8($s4)
+	sb $t4, 24($t0)
+	lb $t4, 9($s4)
+	sb $t4, 25($t0)
+	lb $t4, 10($s4)
+	sb $t4, 26($t0)
+	lb $t4, 11($s4)
+	sb $t4, 27($t0)
+	lb $t4, 12($s4)
+	sb $t4, 28($t0)
+	lb $t4, 13($s4)
+	sb $t4, 29($t0)
+	lb $t4, 14($s4)
+	sb $t4, 30($t0)
+	lb $t4, 15($s4) 
+	sb $t4, 31($t0) 
 
     la $a0, INSERT                  
     li $v0, 4
@@ -164,11 +164,27 @@ ins_new_hash:
 # Do if table[hash] is not empty 
 else_hash:
     beq $t1, $s1, ins_match_found
-    lw $t0
     
     
 
 ins_match_found:
+    la $a0, INSERT
+    li $v0, 4
+    syscall                         # "INSERT "
+    la $a0, L_PARENTHESIS
+    li $v0, 4
+    syscall                         # "("
+    move $a0, $s1
+    li $v0, 1
+    syscall                         # "ID"
+    la $a0, R_PARENTHESIS
+    li $v0, 4
+    syscall                         # ")"
+    la $a0, NOT_INSERTED
+    li $v0, 4
+    syscall                         # " cannot be inserted because record exists"
+
+    jr $ra                          # go back to insert_student
 
 ins_end:
 
