@@ -49,7 +49,7 @@ insert_student:
 	la $t0, table					# Store table pointer in t0
 	sll $s0, $s0, 2					# hash * 4
 	add $t0, $s0, $t0				# Now pointing to table[hash] 
-	lw $t1, 0($t0)					# Store 1st bucket value in t1
+	lw $t1, 0($t0)					# Store head pointer in t1
 	beq $t1, $0, ins_new_hash		# go to ins_new_hash if table[hash] is EMPTY 
     
     jal else_hash
@@ -163,9 +163,11 @@ ins_new_hash:
 
 # Do if table[hash] is not empty 
 else_hash:
-    lw $t2, 0($t1)
-    beq $t2, $s1, ins_match_found
-    
+    lw $t2, 0($t1)                  # deref. to get actual value in container
+    beq $t2, $s1, ins_match_found   # branch if matching ID is found 
+    lw $t3, 16($t1)                 # t3 points to NEXT - temporary var.
+    lw $t1, $t3                     # t1 now pointing to its NEXT field 
+    beq, $t2, $0, ins_check_next    # branch to check_next if NEXT is NULL
     
 
 ins_match_found:
@@ -187,7 +189,7 @@ ins_match_found:
 
     jr $ra                          # go back to insert_student
 
-ins_end:
+ins_check_next:
 
 
 
