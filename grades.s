@@ -74,7 +74,7 @@ ins_new_hash:
     syscall         
 
     sw $v0, 0($t0)       
-    move $t0, $v0                   # Allocated 32B for t0
+    move $t0, $v0                   # Allocated 16B for t0
 
     sw $s1, 0($t0)					# Save ID to 0 
 	sw $s2, 4($t0)					# Save ex1 to 4
@@ -163,7 +163,8 @@ ins_new_hash:
 
 # Do if table[hash] is not empty 
 else_hash:
-    beq $t1, $s1, ins_match_found
+    lw $t2, 0($t1)
+    beq $t2, $s1, ins_match_found
     
     
 
