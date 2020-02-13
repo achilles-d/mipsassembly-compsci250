@@ -163,12 +163,12 @@ ins_new_hash:
 
 # Do if table[hash] is not empty 
 else_hash:
-    lw $t2, 0($t1)                  # deref. to get actual value in container
-    beq $t2, $s1, ins_match_found   # branch if matching ID is found 
-    lw $t3, 16($t1)                 # t3 points to NEXT - temporary var.
-    lw $t1, $t3                     # t1 now pointing to its NEXT field 
-    beq, $t2, $0, ins_check_next    # branch to check_next if NEXT is NULL
-    
+    lw $a0, 0($t1)                  # deref. to get actual value in container
+    beq $a0, $s1, ins_match_found   # branch if matching ID is found 
+    lw $t3, 12($t1)                 # t3 points to NEXT - temporary var.
+    beq, $t3, $0, ins_check_next    # branch to check_next if NEXT is NULL
+    move $t1, $t3                   # t1 becomes NEXT 
+    b else_hash 
 
 ins_match_found:
     la $a0, INSERT
@@ -191,7 +191,86 @@ ins_match_found:
 
 ins_check_next:
 
+    li $a0, 32
+    li $v0, 9
+    syscall         
 
+    sw $v0, 0($t3)       
+    move $t3, $v0                   # Allocated 16B for t0
+
+    sw $s1, 0($t3)					# Save ID to 0 
+	sw $s2, 4($t3)					# Save ex1 to 4
+	sw $s3, 8($t3)					# Save ex2 to 8
+    sw $s5, 12($t3)                  # Save .next field (NULL) to 16
+
+    lb $t4, 0($s4)
+	sb $t4, 16($t3)
+	lb $t4, 1($s4)
+	sb $t4, 17($t3)
+	lb $t4, 2($s4)
+	sb $t4, 18($t3)
+	lb $t4, 3($s4)
+	sb $t4, 19($t3)
+	lb $t4, 4($s4)
+	sb $t4, 20($t3)
+	lb $t4, 5($s4) 
+	sb $t4, 21($t3)
+	lb $t4, 6($s4)
+	sb $t4, 22($t3)
+	lb $t4, 7($s4)
+	sb $t4, 23($t3)
+	lb $t4, 8($s4)
+	sb $t4, 24($t3)
+	lb $t4, 9($s4)
+	sb $t4, 25($t3)
+	lb $t4, 10($s4)
+	sb $t4, 26($t3)
+	lb $t4, 11($s4)
+	sb $t4, 27($t3)
+	lb $t4, 12($s4)
+	sb $t4, 28($t3)
+	lb $t4, 13($s4)
+	sb $t4, 29($t3)
+	lb $t4, 14($s4)
+	sb $t4, 30($t3)
+	lb $t4, 15($s4) 
+	sb $t4, 31($t3) 
+
+    la $a0, INSERT                  
+    li $v0, 4
+    syscall                         # "INSERT "
+    la $a0, L_PARENTHESIS
+    li $v0, 4
+    syscall                         # "("
+    lw $a0, 0($t3)                  
+    li $v0, 1
+    syscall                         # "ID"
+    la $a0, R_PARENTHESIS
+    li $v0, 4
+    syscall                         # ")"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    lw $a0, 4($t3)                  
+    li $v0, 1
+    syscall                         # "ex1"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    lw $a0, 8($t3)                  
+    li $v0, 1
+    syscall                         # "ex2"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    la $a0, 16($t3)                            
+    li $v0, 4
+    syscall                         # "NAME" 
+    la $a0, NEWLINE
+    li $v0, 4
+    syscall                         # " "
+
+    jr $ra
 
 #
 # Delete the record for the specified ID, if it exists in the hash table.
