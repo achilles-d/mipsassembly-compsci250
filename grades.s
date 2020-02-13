@@ -53,19 +53,6 @@ insert_student:
 	beq $t1, $0, ins_new_hash		# go to ins_new_hash if table[hash] is EMPTY 
     
     jal else_hash
-	
-    lw $s1, 0($sp)					# for ID
-	lw $s2, 4($sp)					# for ex1
-	lw $s3, 8($sp)					# for ex2
-	lw $s4, 12($sp)					# for name buffer
-    lw $s5, 16($sp)                 # for .next 
-    lw $s0, 20($sp)                 # for hash
-    lw $ra, 24($sp)                 # for return address
-    lw $v0, 28($sp)                 # for return value 
-    
-    addi $sp, $sp, 32               # collapse stack 
-
-    jr $ra 
 
 # Insert record into the head of table[hash]
 ins_new_hash:
@@ -187,16 +174,33 @@ ins_match_found:
     li $v0, 4
     syscall                         # " cannot be inserted because record exists"
 
-    jr $ra                          # go back to insert_student
+    lw $s1, 0($sp)					# for ID
+	lw $s2, 4($sp)					# for ex1
+	lw $s3, 8($sp)					# for ex2
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)                 # for return address
+    lw $v0, 28($sp)                 # for return value 
+
+    addi $sp, $sp, 32               # collapse stack 
+
+    jr $ra 
 
 ins_check_next:
+
+    lw $t3, 0($t1)                  # store ID in t3
+    beq $s1, $t3, ins_match_found   # branch to match_found if IDs match 
 
     li $a0, 32
     li $v0, 9
     syscall         
 
-    sw $v0, 0($t3)       
-    move $t3, $v0                   # Allocated 16B for t0
+
+
+    sw $v0, 12($t1)       
+    move $t3, $v0                   # Allocated 16B for t3
+
 
     sw $s1, 0($t3)					# Save ID to 0 
 	sw $s2, 4($t3)					# Save ex1 to 4
@@ -270,7 +274,18 @@ ins_check_next:
     li $v0, 4
     syscall                         # " "
 
-    jr $ra
+    lw $s1, 0($sp)					# for ID
+	lw $s2, 4($sp)					# for ex1
+	lw $s3, 8($sp)					# for ex2
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)                 # for return address
+    lw $v0, 28($sp)                 # for return value 
+
+    addi $sp, $sp, 32               # collapse stack 
+
+    jr $ra 
 
 #
 # Delete the record for the specified ID, if it exists in the hash table.
@@ -289,7 +304,74 @@ delete_student:
 # Argument: $a0 (ID)
 #
 lookup_student:
-    # TODO: Implement
+
+    addi $sp, $sp, -32
+    sw $s1, 0($sp)					# for ID
+	sw $s2, 4($sp)					# for ex1
+	sw $s3, 8($sp)					# for ex2
+	sw $s4, 12($sp)					# for name buffer
+    sw $s5, 16($sp)                 # for .next 
+    sw $s0, 20($sp)                 # for hash
+    sw $ra, 24($sp)					# Allocate on stack
+    sw $v0, 28($sp)                 # for return value 
+
+    jal hash						# Generate hash
+	
+	move $s0, $v0					# Store hash in s0
+	move $s1, $a0					# Store ID in s1
+	move $s2, $a1					# Store ex1 in s2
+	move $s3, $a2					# Store ex2 in s3
+	move $s4, $a3					# Store name buffer in s3
+    move $s5, $0                    # Make .next NULL
+	
+	la $t0, table					# Store table pointer in t0
+	sll $s0, $s0, 2					# hash * 4
+	add $t0, $s0, $t0				# Now pointing to table[hash] 
+	lw $t1, 0($t0)					# Store head pointer in t1
+	beq $t1, $0, lookup_no_hash		# go to no_hash if table[hash] is EMPTY 
+
+    jal lookup_in_hash              # go to in_hash if something is there
+
+lookup_no_hash:
+
+    la $a0, LOOKUP
+    li $v0, 4
+    syscall                         # "LOOKUP "
+    la $a0, L_PARENTHESIS
+    li $v0, 4
+    syscall                         # "("
+    move $a0, $s1
+    li $v0, 1
+    syscall                         # "ID"
+    la $a0, R_PARENTHESIS
+    li $v0, 4
+    syscall                         # ")"
+    la $a0, NOT_LOOKUP
+    li $v0, 4
+    syscall                         # " record does not exist"
+
+    lw $s1, 0($sp)					# for ID
+	lw $s2, 4($sp)					# for ex1
+	lw $s3, 8($sp)					# for ex2
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)                 # for return address
+    lw $v0, 28($sp)                 # for return value 
+
+    addi $sp, $sp, 32               # collapse stack 
+
+    jr $ra 
+    
+lookup_in_hash:
+    lw $a0, 0($t1)                  # deref. to get actual value in container
+    beq $a0, $s1, lookup_match_found# branch if matching ID is found 
+    lw $t3, 12($t1)                 # t3 points to NEXT - temporary var.
+    beq, $t3, $0, lookup_check_next    # branch to check_next if NEXT is NULL
+    la $t1, ($t3)                   # t1 becomes NEXT 
+    b lookup_in_hash 
+
+lookup_match_found:
 
 
 #
@@ -498,4 +580,6 @@ NEWLINE:                .asciiz     "\n"                        # Newline
 L_PARENTHESIS:          .asciiz     "("                         # Left parenthesis
 R_PARENTHESIS:          .asciiz     ")"                         # Right parenthesis  
 INSERT:                 .asciiz     "INSERT "                   # Student inserted
+LOOKUP:                 .asciiz     "LOOKUP "                   # Lookup student 
+NOT_LOOKUP:             .asciiz     " record does not exist\n"
 NOT_INSERTED:           .asciiz     " cannot insert because record exists\n"  
