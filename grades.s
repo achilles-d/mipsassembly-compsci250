@@ -27,14 +27,15 @@ init_hash_table:
 # Arguments: $a0 (ID), $a1 (exam 1 score), $a2 (exam 2 score), $a3 (address of name buffer)
 #
 insert_student:
-	addi $sp, $sp, -36
+	addi $sp, $sp, -32
     sw $s1, 0($sp)					# for ID
 	sw $s2, 4($sp)					# for ex1
 	sw $s3, 8($sp)					# for ex2
-	sw $s4, 24($sp)					# for name buffer
-    sw $s5, 28($sp)                 # for .next 
-    sw $s0, 32($sp)                 # for hash
-    sw $ra, 36($sp)					# Allocate on stack
+	sw $s4, 12($sp)					# for name buffer
+    sw $s5, 16($sp)                 # for .next 
+    sw $s0, 20($sp)                 # for hash
+    sw $ra, 24($sp)					# Allocate on stack
+    sw $v0, 28($sp)                 # for return value 
 
 	jal hash						# Generate hash
 	
@@ -56,22 +57,62 @@ insert_student:
     lw $s1, 0($sp)					# for ID
 	lw $s2, 4($sp)					# for ex1
 	lw $s3, 8($sp)					# for ex2
-	lw $s4, 24($sp)					# for name buffer
-    lw $s5, 28($sp)                 # for .next 
-    lw $s0, 32($sp)                 # for hash
-    lw $ra, 36($sp)                 # for return address
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)                 # for return address
+    lw $v0, 28($sp)                 # for return value 
     
-    addi $sp, $sp, 36               # collapse stack 
+    addi $sp, $sp, 32               # collapse stack 
 
     jr $ra 
 
 # Insert record into the head of table[hash]
 ins_new_hash:
+    li $a0, 32
+    li $v0, 9
+    syscall         
+
+    sw $v0, 0($t0)       
+    move $t0, $v0                   # Allocated 32B for t0
+
     sw $s1, 0($t0)					# Save ID to 0 
 	sw $s2, 4($t0)					# Save ex1 to 4
 	sw $s3, 8($t0)					# Save ex2 to 8
-	sw $s4, 24($t0)					# Save name buffer to 12
-    sw $s5, 28($t0)                  # Save .next field (NULL) to 16
+    sw $s5, 12($t0)                  # Save .next field (NULL) to 16
+
+    lb $t4, 0($s4) #saves name
+	sb $t4, 16($t0) #saves name
+	lb $t4, 1($s4) #saves name
+	sb $t4, 17($t0) #saves name
+	lb $t4, 2($s4) #saves name
+	sb $t4, 18($t0) #saves name
+	lb $t4, 3($s4) #saves name
+	sb $t4, 19($t0) #saves name
+	lb $t4, 4($s4) #saves name
+	sb $t4, 20($t0) #saves name
+	lb $t4, 5($s4) #saves name
+	sb $t4, 21($t0) #saves name
+	lb $t4, 6($s4) #saves name
+	sb $t4, 22($t0) #saves name
+	lb $t4, 7($s4) #saves name
+	sb $t4, 23($t0) #saves name
+	lb $t4, 8($s4) #saves name
+	sb $t4, 24($t0) #saves name
+	lb $t4, 9($s4) #saves name
+	sb $t4, 25($t0) #saves name
+	lb $t4, 10($s4) #saves name
+	sb $t4, 26($t0) #saves name
+	lb $t4, 11($s4) #saves name
+	sb $t4, 27($t0) #saves name
+	lb $t4, 12($s4) #saves name
+	sb $t4, 28($t0) #saves name
+	lb $t4, 13($s4) #saves name
+	sb $t4, 29($t0) #saves name
+	lb $t4, 14($s4) #saves name
+	sb $t4, 30($t0) #saves name
+	lb $t4, 15($s4) #saves name
+	sb $t4, 31($t0) #saves name
 
     la $a0, INSERT                  
     li $v0, 4
@@ -100,7 +141,7 @@ ins_new_hash:
     la $a0, SPACE
     li $v0, 4
     syscall                         # " "
-    lw $a0, 24($t0)                            
+    la $a0, 16($t0)                            
     li $v0, 4
     syscall                         # "NAME" 
     la $a0, NEWLINE
@@ -110,18 +151,27 @@ ins_new_hash:
     lw $s1, 0($sp)					# for ID
 	lw $s2, 4($sp)					# for ex1
 	lw $s3, 8($sp)					# for ex2
-	lw $s4, 24($sp)					# for name buffer
-    lw $s5, 28($sp)                 # for .next 
-    lw $s0, 32($sp)                 # for hash
-    lw $ra, 36($sp)                 # for return address
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)                 # for return address
+    lw $v0, 28($sp)                 # for return value 
 
-    addi $sp, $sp, 36               # collapse stack 
-    
+    addi $sp, $sp, 32               # collapse stack 
 
     jr $ra 
 
 # Do if table[hash] is not empty 
 else_hash:
+    beq $t1, $s1, ins_match_found
+    lw $t0
+    
+    
+
+ins_match_found:
+
+ins_end:
+
 
 
 #
