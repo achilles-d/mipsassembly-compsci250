@@ -354,11 +354,11 @@ del_not_found:
 
 
 del_loop:
+    beq, $t1, $0, del_not_found     # branch if at the end 
     lw $a0, 0($t1)                  # deref. to get actual value in container
     lw $t3, 12($t1)                 # t3 points to NEXT - temporary var.
-    move $t7, $t1                   # store t1 in prev, t7
     beq $a0, $s1, del_match_found   # branch if matching ID is found 
-    beq, $t1, $0, del_not_found     # branch if at the end 
+    move $t7, $t1                   # store t1 in prev, t7
     move $t1, $t3                   # t1 becomes NEXT 
     b del_loop
 
