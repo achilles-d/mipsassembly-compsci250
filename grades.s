@@ -348,7 +348,7 @@ del_not_found:
     lw $ra, 24($sp)					# Allocate on stack
     lw $v0, 28($sp)                 # for return value  
 
-    addi $sp, $sp, -32              # pop
+    addi $sp, $sp, 32              # pop
 
     jr $ra
 
