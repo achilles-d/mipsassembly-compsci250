@@ -151,7 +151,7 @@ ins_new_hash:
 
 # Do if table[hash] is not empty 
 else_hash:
-    beq, $t1, $0, ins_check_next    # branch to check_next if NEXT is NULL
+    beq, $t1, $0, ins_connect    # branch to check_next if NEXT is NULL
     lw $a0, 0($t1)                  # deref. to get actual value in container
     beq $a0, $s1, ins_match_found   # branch if matching ID is found 
     move $t7, $t1                   # t7 is PREV
@@ -188,16 +188,14 @@ ins_match_found:
 
     jr $ra 
 
-ins_check_next:
-
-    lw $t3, 0($t1)                  # store ID in t3
-    beq $s1, $t3, ins_match_found   # branch to match_found if IDs match 
+ins_connect:
 
     li $a0, 32
     li $v0, 9
     syscall                         # Allocated 32B
 
-    sw $v0, 12($t1)                 # Point t3 to storage space 
+    sw $v0, 12($t7)                 # Point t3 to storage space 
+    lw $t3, 12($t7)
     move $t3, $v0                   # Allocated 32B for t3
 
 
