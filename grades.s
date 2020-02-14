@@ -53,7 +53,7 @@ insert_student:
 	lw $t1, 0($t0)					# Store head pointer in t1
 	beq $t1, $0, ins_new_hash		# go to ins_new_hash if table[hash] is EMPTY 
     
-    jal else_hash
+    b else_hash
 
 # Insert record into the head of table[hash]
 ins_new_hash:
@@ -151,11 +151,11 @@ ins_new_hash:
 
 # Do if table[hash] is not empty 
 else_hash:
+    beq, $t1, $0, ins_check_next    # branch to check_next if NEXT is NULL
     lw $a0, 0($t1)                  # deref. to get actual value in container
     beq $a0, $s1, ins_match_found   # branch if matching ID is found 
-    lw $t3, 12($t1)                 # t3 points to NEXT - temporary var.
-    beq, $t3, $0, ins_check_next    # branch to check_next if NEXT is NULL
-    move $t1, $t3                   # t1 becomes NEXT 
+    move $t7, $t1                   # t7 is PREV
+    lw $t1, 12($t1)                
     b else_hash 
 
 ins_match_found:
@@ -196,8 +196,6 @@ ins_check_next:
     li $a0, 32
     li $v0, 9
     syscall                         # Allocated 32B
-
-
 
     sw $v0, 12($t1)                 # Point t3 to storage space 
     move $t3, $v0                   # Allocated 32B for t3
@@ -240,6 +238,8 @@ ins_check_next:
 	sb $t4, 30($t3)
 	lb $t4, 15($s4) 
 	sb $t4, 31($t3) 
+
+    sw $t3, 12($t7)
 
     la $a0, INSERT                  
     li $v0, 4
@@ -320,7 +320,7 @@ delete_student:
 
 	beq $t1, $0, del_not_found		# go to ins_new_hash if table[hash] is EMPTY 
     
-    jal del_loop
+    b del_loop
 
 del_not_found:
     la $a0, DELETE
@@ -335,7 +335,7 @@ del_not_found:
     la $a0, R_PARENTHESIS
     li $v0, 4
     syscall                         # ")"
-    la $a0, NOT_LOOKUP
+    la $a0, NOT_DELETE
     li $v0, 4
     syscall                         # " cannot delete because record does not exist"
 
@@ -357,7 +357,7 @@ del_loop:
     beq, $t1, $0, del_not_found     # branch if at the end 
     lw $a0, 0($t1)                  # deref. to get actual value in container
     lw $t3, 12($t1)                 # t3 points to NEXT - temporary var.
-    beq $a0, $s1, del_match_found   # branch if matching ID is found 
+    beq $a0, $s1, del_match_found   # branch if matching ID is found
     move $t7, $t1                   # store t1 in prev, t7
     move $t1, $t3                   # t1 becomes NEXT 
     b del_loop
@@ -403,12 +403,17 @@ del_match_found:
     li $v0, 4
     syscall                         # " "
 
-    sw $t3, 12($t7)
+    lw $t6, 12($t1)                 # store t1.next in t6 
+    beq $t7, $0, del_prev_null      # branch if prev is null 
+    
+    sw $t6, 12($t7)                 # store curr.next .... in prev.next
 
-    sw $0, 0($t1)					# Erase ID
-	sw $0, 4($t1)					# Erase ex1
-	sw $0, 8($t1)					# Erase ex2
-    sw $0, 16($t1)                  # Erase string buffer
+
+
+    # sw $0, 0($t1)					# Erase ID
+	# sw $0, 4($t1)					# Erase ex1
+	# sw $0, 8($t1)					# Erase ex2
+    # sw $0, 16($t1)                  # Erase string buffer
 
     lw $s1, 0($sp)					# for ID
 	lw $s2, 4($sp)					# for ex1
@@ -422,6 +427,23 @@ del_match_found:
     addi $sp, $sp, 32               # collapse stack 
 
     jr $ra
+
+del_prev_null:
+    sw $t6, 0($t0)                  # store null in head pointer
+
+    lw $s1, 0($sp)					# for ID
+	lw $s2, 4($sp)					# for ex1
+	lw $s3, 8($sp)					# for ex2
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)					# Allocate on stack
+    lw $v0, 28($sp)                 # for return value 
+
+    addi $sp, $sp, 32               # collapse stack 
+
+    jr $ra
+
 #
 # Print all the member variables for the record with the specified ID, if it exists in the hash table.
 # If a record already exists, print "LOOKUP (<ID>) <Exam 1 Score> <Exam 2 Score> <Name>".
@@ -450,7 +472,7 @@ lookup_student:
 	lw $t1, 0($t0)					# Store head pointer in t1
 	beq $t1, $0, lookup_no_hash		# go to lookup_no_hash if table[hash] is EMPTY
 
-    jal lookup_in_hash              # go to in_hash if something is there
+    b lookup_in_hash                # go to in_hash if something is there
 
 lookup_no_hash:
 
@@ -484,11 +506,10 @@ lookup_no_hash:
     jr $ra 
     
 lookup_in_hash:
-    lw $a0, 0($t1)                  # deref. to get actual value in container
-    beq $a0, $s1, lookup_match_found # branch if matching ID is found 
-    lw $t3, 12($t1)                 # t3 points to NEXT - temporary var.
-    beq, $t3, $0, lookup_check_last # branch to check_last if NEXT is NULL
-    move $t1, $t3                   # t1 becomes NEXT 
+    beq, $t1, $0, lookup_no_hash  # branch to check_last if NEXT is NULL
+    lw $a0, 0($t1)                   # deref. to get actual ID value in container
+    beq $a0, $s1,lookup_match_found # branch if matching ID is found 
+    lw $t1, 12($t1)                 # t3 points to NEXT - temporary var.
     b lookup_in_hash 
 
 lookup_match_found:
@@ -544,14 +565,6 @@ lookup_match_found:
 
     jr $ra 
 
-
-lookup_check_last:
-    lw $t3, 0($t1)                  # store ID in t3
-    bne $s1, $t3, lookup_match_found # branch to match_found if IDs match 
-    b lookup_no_hash
-    
-
-#
 # Read input and call the appropriate hash table function.
 #
 main:
@@ -762,4 +775,4 @@ LOOKUP:                 .asciiz     "LOOKUP "                   # Lookup student
 NOT_LOOKUP:             .asciiz     " record does not exist\n"
 NOT_INSERTED:           .asciiz     " cannot insert because record exists\n" 
 DELETE:                 .asciiz     "DELETE "                   # Delete
-NOT_DELETE:             .asciiz     " cannot delete because the record does not exist\n" 
+NOT_DELETE:             .asciiz     " cannot delete because record does not exist\n" 
