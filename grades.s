@@ -66,7 +66,7 @@ ins_new_hash:
     sw $s1, 0($t0)					# Save ID to 0 
 	sw $s2, 4($t0)					# Save ex1 to 4
 	sw $s3, 8($t0)					# Save ex2 to 8
-    sw $s5, 12($t0)                  # Save .next field (NULL) to 16
+    sw $s5, 12($t0)                  # Save .next field (NULL) to 12
 
     lb $t4, 0($s4)
 	sb $t4, 16($t0)
@@ -194,12 +194,12 @@ ins_check_next:
 
     li $a0, 32
     li $v0, 9
-    syscall         
+    syscall                         # Allocated 32B
 
 
 
-    sw $v0, 12($t1)       
-    move $t3, $v0                   # Allocated 16B for t3
+    sw $v0, 12($t1)                 # Point t3 to storage space 
+    move $t3, $v0                   # Allocated 32B for t3
 
 
     sw $s1, 0($t3)					# Save ID to 0 
@@ -294,9 +294,131 @@ ins_check_next:
 # Argument: $a0 (ID)
 #
 delete_student:
-    # TODO: Implement
+    addi $sp, $sp, -32              # collapse stack 
+
+    sw $s1, 0($sp)					# for ID
+	sw $s2, 4($sp)					# for ex1
+	sw $s3, 8($sp)					# for ex2
+	sw $s4, 12($sp)					# for name buffer
+    sw $s5, 16($sp)                 # for .next 
+    sw $s0, 20($sp)                 # for hash
+    sw $ra, 24($sp)					# Allocate on stack
+    sw $v0, 28($sp)                 # for return value 
+
+    jal hash
+
+    move $s0, $v0					# Store hash in s0
+	move $s1, $a0					# Store ID in s1
+
+    la $t0, table					# Store table pointer in t0
+	sll $s0, $s0, 2					# hash * 4
+	add $t0, $s0, $t0				# Now pointing to table[hash] 
+	lw $t1, 0($t0)					# Store head pointer in t1
+
+    move $t6, $0                    # set prev to NULL 
+
+	beq $t1, $0, del_not_found		# go to ins_new_hash if table[hash] is EMPTY 
+    
+    jal del_loop
+
+del_not_found:
+    la $a0, DELETE
+    li $v0, 4
+    syscall                         # "DELETE "
+    la $a0, L_PARENTHESIS
+    li $v0, 4
+    syscall                         # "("
+    move $a0, $s1
+    li $v0, 1
+    syscall                         # "ID"
+    la $a0, R_PARENTHESIS
+    li $v0, 4
+    syscall                         # ")"
+    la $a0, NOT_LOOKUP
+    li $v0, 4
+    syscall                         # " cannot delete because record does not exist"
+
+    lw $s1, 0($sp)					# for ID
+	lw $s2, 4($sp)					# for ex1
+	lw $s3, 8($sp)					# for ex2
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)					# Allocate on stack
+    lw $v0, 28($sp)                 # for return value  
+
+    addi $sp, $sp, -32              # pop
+
+    jr $ra
 
 
+del_loop:
+    lw $a0, 0($t1)                  # deref. to get actual value in container
+    lw $t3, 12($t1)                 # t3 points to NEXT - temporary var.
+    beq $a0, $s1, del_match_found   # branch if matching ID is found 
+    beq, $t1, $0, del_no_match        # branch if at the end
+    move $t7, $t1                   # store t1 in prev, t7 
+    move $t1, $t3                   # t1 becomes NEXT 
+    b del_loop
+
+del_match_found:
+
+    lw $s1, 0($t1)					# Load ID
+	lw $s2, 4($t1)					# Load ex2
+	lw $s3, 8($t1)					# Load ex3
+    lw $s5, 16($t1)                 # load string buffer
+    
+    la $a0, DELETE                  
+    li $v0, 4
+    syscall                         # "INSERT "
+    la $a0, L_PARENTHESIS
+    li $v0, 4
+    syscall                         # "("
+    lw $a0, 0($t1)                  
+    li $v0, 1
+    syscall                         # "ID"
+    la $a0, R_PARENTHESIS
+    li $v0, 4
+    syscall                         # ")"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    lw $a0, 4($t1)                  
+    li $v0, 1
+    syscall                         # "ex1"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    lw $a0, 8($t1)                  
+    li $v0, 1
+    syscall                         # "ex2"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    la $a0, 16($t1)                           
+    li $v0, 4
+    syscall                         # "NAME" 
+    la $a0, NEWLINE
+    li $v0, 4
+    syscall                         # " "
+
+    sw $0, 0($t1)					# Erase ID
+	sw $0, 4($t1)					# Erase ex1
+	sw $0, 8($t1)					# Erase ex2
+    sw $0, 16($t1)                  # Erase string buffer
+
+    sw $s1, 0($sp)					# for ID
+	sw $s2, 4($sp)					# for ex1
+	sw $s3, 8($sp)					# for ex2
+	sw $s4, 12($sp)					# for name buffer
+    sw $s5, 16($sp)                 # for .next 
+    sw $s0, 20($sp)                 # for hash
+    sw $ra, 24($sp)					# Allocate on stack
+    sw $v0, 28($sp)                 # for return value 
+
+    addi $sp, $sp, 32               # collapse stack 
+
+    jr $ra
 #
 # Print all the member variables for the record with the specified ID, if it exists in the hash table.
 # If a record already exists, print "LOOKUP (<ID>) <Exam 1 Score> <Exam 2 Score> <Name>".
@@ -304,7 +426,6 @@ delete_student:
 # Argument: $a0 (ID)
 #
 lookup_student:
-
     addi $sp, $sp, -32
     sw $s1, 0($sp)					# for ID
 	sw $s2, 4($sp)					# for ex1
@@ -315,20 +436,16 @@ lookup_student:
     sw $ra, 24($sp)					# Allocate on stack
     sw $v0, 28($sp)                 # for return value 
 
-    jal hash						# Generate hash
+	jal hash						# Generate hash
 	
 	move $s0, $v0					# Store hash in s0
 	move $s1, $a0					# Store ID in s1
-	move $s2, $a1					# Store ex1 in s2
-	move $s3, $a2					# Store ex2 in s3
-	move $s4, $a3					# Store name buffer in s3
-    move $s5, $0                    # Make .next NULL
 	
 	la $t0, table					# Store table pointer in t0
 	sll $s0, $s0, 2					# hash * 4
 	add $t0, $s0, $t0				# Now pointing to table[hash] 
 	lw $t1, 0($t0)					# Store head pointer in t1
-	beq $t1, $0, lookup_no_hash		# go to no_hash if table[hash] is EMPTY 
+	beq $t1, $0, lookup_no_hash		# go to lookup_no_hash if table[hash] is EMPTY
 
     jal lookup_in_hash              # go to in_hash if something is there
 
@@ -356,23 +473,80 @@ lookup_no_hash:
 	lw $s4, 12($sp)					# for name buffer
     lw $s5, 16($sp)                 # for .next 
     lw $s0, 20($sp)                 # for hash
-    lw $ra, 24($sp)                 # for return address
-    lw $v0, 28($sp)                 # for return value 
+    lw $ra, 24($sp)					# Allocate on stack
+    lw $v0, 28($sp)                 # for return value  
 
-    addi $sp, $sp, 32               # collapse stack 
+    addi $sp, $sp, 32
 
     jr $ra 
     
 lookup_in_hash:
     lw $a0, 0($t1)                  # deref. to get actual value in container
-    beq $a0, $s1, lookup_match_found# branch if matching ID is found 
+    beq $a0, $s1, lookup_match_found # branch if matching ID is found 
     lw $t3, 12($t1)                 # t3 points to NEXT - temporary var.
-    beq, $t3, $0, lookup_check_next    # branch to check_next if NEXT is NULL
-    la $t1, ($t3)                   # t1 becomes NEXT 
+    beq, $t3, $0, lookup_check_last # branch to check_last if NEXT is NULL
+    move $t1, $t3                   # t1 becomes NEXT 
     b lookup_in_hash 
 
 lookup_match_found:
+    lw $s1, 0($t1)					# Load ID
+	lw $s2, 4($t1)					# Load ex2
+	lw $s3, 8($t1)					# Load ex3
+    lw $s5, 16($t1)                 # load string buffer  
 
+    la $a0, LOOKUP                  
+    li $v0, 4
+    syscall                         # "LOOKUP "
+    la $a0, L_PARENTHESIS
+    li $v0, 4
+    syscall                         # "("
+    move $a0, $s1                  
+    li $v0, 1
+    syscall                         # "ID"
+    la $a0, R_PARENTHESIS
+    li $v0, 4
+    syscall                         # ")"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    move $a0, $s2                  
+    li $v0, 1
+    syscall                         # "ex1"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    move $a0, $s3                  
+    li $v0, 1
+    syscall                         # "ex2"
+    la $a0, SPACE
+    li $v0, 4
+    syscall                         # " "
+    la $a0, 16($t1)                           
+    li $v0, 4
+    syscall                         # "NAME" 
+    la $a0, NEWLINE
+    li $v0, 4
+    syscall                         # " "
+
+    lw $s1, 0($sp)					# for ID
+	lw $s2, 4($sp)					# for ex1
+	lw $s3, 8($sp)					# for ex2
+	lw $s4, 12($sp)					# for name buffer
+    lw $s5, 16($sp)                 # for .next 
+    lw $s0, 20($sp)                 # for hash
+    lw $ra, 24($sp)					# Allocate on stack
+    lw $v0, 28($sp)                 # for return value 
+
+    addi $sp, $sp, 32               # collapse stack 
+
+    jr $ra 
+
+
+lookup_check_last:
+    lw $t3, 0($t1)                  # store ID in t3
+    bne $s1, $t3, lookup_match_found # branch to match_found if IDs match 
+    b lookup_no_hash
+    
 
 #
 # Read input and call the appropriate hash table function.
@@ -582,4 +756,6 @@ R_PARENTHESIS:          .asciiz     ")"                         # Right parenthe
 INSERT:                 .asciiz     "INSERT "                   # Student inserted
 LOOKUP:                 .asciiz     "LOOKUP "                   # Lookup student 
 NOT_LOOKUP:             .asciiz     " record does not exist\n"
-NOT_INSERTED:           .asciiz     " cannot insert because record exists\n"  
+NOT_INSERTED:           .asciiz     " cannot insert because record exists\n" 
+DELETE:                 .asciiz     "DELETE "                   # Delete
+NOT_DELETE:             .asciiz     " cannot delete because the record does not exist\n" 
