@@ -348,7 +348,7 @@ del_not_found:
     lw $ra, 24($sp)					# Allocate on stack
     lw $v0, 28($sp)                 # for return value  
 
-    addi $sp, $sp, -32              # pop
+    addi $sp, $sp, 32              # pop
 
     jr $ra
 
@@ -486,102 +486,7 @@ lookup_no_hash:
     li $v0, 1
     syscall                         # "ID"
     la $a0, R_PARENTHESIS
-    li $v0, 4
-    syscall                         # ")"
-    la $a0, NOT_LOOKUP
-    li $v0, 4
-    syscall                         # " record does not exist"
-
-    lw $s1, 0($sp)					# for ID
-	lw $s2, 4($sp)					# for ex1
-	lw $s3, 8($sp)					# for ex2
-	lw $s4, 12($sp)					# for name buffer
-    lw $s5, 16($sp)                 # for .next 
-    lw $s0, 20($sp)                 # for hash
-    lw $ra, 24($sp)					# Allocate on stack
-    lw $v0, 28($sp)                 # for return value  
-
-    addi $sp, $sp, 32
-
-    jr $ra 
-    
-lookup_in_hash:
-    beq, $t1, $0, lookup_no_hash  # branch to check_last if NEXT is NULL
-    lw $a0, 0($t1)                   # deref. to get actual ID value in container
-    beq $a0, $s1,lookup_match_found # branch if matching ID is found 
-    lw $t1, 12($t1)                 # t3 points to NEXT - temporary var.
-    b lookup_in_hash 
-
-lookup_match_found:
-    lw $s1, 0($t1)					# Load ID
-	lw $s2, 4($t1)					# Load ex2
-	lw $s3, 8($t1)					# Load ex3
-    lw $s5, 16($t1)                 # load string buffer  
-
-    la $a0, LOOKUP                  
-    li $v0, 4
-    syscall                         # "LOOKUP "
-    la $a0, L_PARENTHESIS
-    li $v0, 4
-    syscall                         # "("
-    move $a0, $s1                  
-    li $v0, 1
-    syscall                         # "ID"
-    la $a0, R_PARENTHESIS
-    li $v0, 4
-    syscall                         # ")"
-    la $a0, SPACE
-    li $v0, 4
-    syscall                         # " "
-    move $a0, $s2                  
-    li $v0, 1
-    syscall                         # "ex1"
-    la $a0, SPACE
-    li $v0, 4
-    syscall                         # " "
-    move $a0, $s3                  
-    li $v0, 1
-    syscall                         # "ex2"
-    la $a0, SPACE
-    li $v0, 4
-    syscall                         # " "
-    la $a0, 16($t1)                           
-    li $v0, 4
-    syscall                         # "NAME" 
-    la $a0, NEWLINE
-    li $v0, 4
-    syscall                         # " "
-
-    lw $s1, 0($sp)					# for ID
-	lw $s2, 4($sp)					# for ex1
-	lw $s3, 8($sp)					# for ex2
-	lw $s4, 12($sp)					# for name buffer
-    lw $s5, 16($sp)                 # for .next 
-    lw $s0, 20($sp)                 # for hash
-    lw $ra, 24($sp)					# Allocate on stack
-    lw $v0, 28($sp)                 # for return value 
-
-    addi $sp, $sp, 32               # collapse stack 
-
-    jr $ra 
-
-# Read input and call the appropriate hash table function.
-#
-main:
-    addi    $sp, $sp, -16
-    sw      $ra, 0($sp)
-    sw      $s0, 4($sp)
-    sw      $s1, 8($sp)
-    sw      $s2, 12($sp)
-
-    jal     init_hash_table
-
-main_loop:
-    la      $a0, PROMPT_COMMAND_TYPE    # Promt user for command type
-    li      $v0, 4
-    syscall
-
-    la      $a0, COMMAND_BUFFER         # Buffer to store string input
+   Buffer to store string input
     li      $a1, 3                      # Max number of chars to read
     li      $v0, 8                      # Read string
     syscall
@@ -688,6 +593,95 @@ exit_main:
 string_equal:
     addi    $sp, $sp, -12
     sw      $ra, 0($sp)
+    sw      $s0, 4($sp)
+    sw      $s1, 8($sp)
+
+    move    $s0, $a0
+    move    $s1, $a1
+
+    lb      $t0, 0($s0)
+    lb      $t1, 0($s1)
+
+string_equal_loop:
+    beq     $t0, $t1, continue_string_equal_loop
+    j       char_not_equal
+continue_string_equal_loop:
+    beq     $t0, $0, char_equal
+    addi    $s0, $s0, 1
+    addi    $s1, $s1, 1
+    lb      $t0, 0($s0)
+    lb      $t1, 0($s1)
+    j       string_equal_loop
+
+char_equal:
+    li      $v0, 1
+    j       exit_string_equal
+
+char_not_equal:
+    li      $v0, 0
+
+exit_string_equal:
+    lw      $ra, 0($sp)
+    lw      $s0, 4($sp)
+    lw      $s1, 8($sp)
+    addi    $sp, $sp, 12
+    jr      $ra
+
+
+#
+# Remove newline from string.
+# Argument: $a0 (address of string to remove newline from)
+#
+remove_newline:
+    addi    $sp, $sp, -4
+    sw      $ra, 0($sp)
+
+    lb      $t0, 0($a0)
+    li      $t1, 10                     # ASCII value for newline char
+
+remove_newline_loop:
+    beq     $t0, $t1, char_is_newline
+    addi    $a0, $a0, 1
+    lb      $t0, 0($a0)
+    j       remove_newline_loop
+
+char_is_newline:
+    sb      $0, 0($a0)
+
+    lw      $ra, 0($sp)
+    addi    $sp, $sp, 4
+    jr      $ra
+
+
+
+# 
+# DATA
+#
+.data 
+.align 2
+table: .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+PROMPT_COMMAND_TYPE:    .asciiz     "PROMPT (COMMAND TYPE): "
+PROMPT_ID:              .asciiz     "PROMPT (ID): "
+PROMPT_EXAM1:           .asciiz     "PROMPT (EXAM 1 SCORE): "
+PROMPT_EXAM2:           .asciiz     "PROMPT (EXAM 2 SCORE): "
+PROMPT_NAME:            .asciiz     "PROMPT (NAME): "
+COMMAND_BUFFER:         .space      3                           # 3B buffer
+NAME_BUFFER:            .space      16                          # 16B buffer
+COMMAND_I:              .asciiz     "i"                         # Insert
+COMMAND_D:              .asciiz     "d"                         # Delete
+COMMAND_L:              .asciiz     "l"                         # Lookup
+COMMAND_T:              .asciiz     "t"                         # Terminate
+SPACE:                  .asciiz     " "                         # Space 
+NEWLINE:                .asciiz     "\n"                        # Newline
+L_PARENTHESIS:          .asciiz     "("                         # Left parenthesis
+R_PARENTHESIS:          .asciiz     ")"                         # Right parenthesis  
+INSERT:                 .asciiz     "INSERT "                   # Student inserted
+LOOKUP:                 .asciiz     "LOOKUP "                   # Lookup student 
+NOT_LOOKUP:             .asciiz     " record does not exist\n"
+NOT_INSERTED:           .asciiz     " cannot insert because record exists\n" 
+DELETE:                 .asciiz     "DELETE "                   # Delete
+NOT_DELETE:             .asciiz     " cannot delete because record does not exist\n" 
+$sp)
     sw      $s0, 4($sp)
     sw      $s1, 8($sp)
 
